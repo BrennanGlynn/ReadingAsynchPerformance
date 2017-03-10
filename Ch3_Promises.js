@@ -249,3 +249,19 @@ Promise.resolve(..) will give us a trustable Promise wrapper to chain off of:
 //////////////////////////////////////////////////////////////////
 //                          Chain Flow                          //
 //////////////////////////////////////////////////////////////////
+
+// Every time you call then(..) on a Promise, it creates and returns a new Promise, which we can chain with.
+
+var p = Promise.resolve( 21 );
+var p2 = p.then( function (v) {
+    console.log(v); // 21
+
+    // fulfill 'p2' with value 42
+    return v * 2
+});
+
+p2.then(function (v) {
+    console.log(v); // 42
+});
+
+// Got to go to Emily's end of page 54
