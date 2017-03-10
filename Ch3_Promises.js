@@ -252,16 +252,176 @@ Promise.resolve(..) will give us a trustable Promise wrapper to chain off of:
 
 // Every time you call then(..) on a Promise, it creates and returns a new Promise, which we can chain with.
 
-var p = Promise.resolve( 21 );
-var p2 = p.then( function (v) {
-    console.log(v); // 21
+// var p = Promise.resolve( 21 );
+// var p2 = p.then( function (v) {
+//     console.log(v); // 21
+//
+//     // fulfill 'p2' with value 42
+//     return v * 2
+// });
+//
+// p2.then(function (v) {
+//     console.log(v); // 42
+// });
 
-    // fulfill 'p2' with value 42
-    return v * 2
-});
+// Returning v * 2 is success
 
-p2.then(function (v) {
-    console.log(v); // 42
-});
+// Thankfully we can chain these together
+// var p = Promise.resolve( 2 );
+// p
+//     .then(function (v) {
+//         console.log(v);
+//
+//         return v * 2;
+//     } )
+//     .then(function (v) {
+//         console.log(v);
+//     } );
 
-// Got to go to Emily's end of page 54
+// What if we want step 2 to wait for step 1 to do something asynchronous?
+// var p = Promise.resolve( 18 );
+// p.then( function (v) {
+//     console.log( v );   // 18
+//
+//     // create a promise and return it
+//     return new Promise( function (resolve,reject) {
+//         // introduce asynchrony
+//         setTimeout( function () {
+//             resolve( v * 2 );
+//         }, 200);
+//     } );
+// } )
+// .then( function (v) {
+//     console.log( v );   // 36
+// });
+
+// It works just fine!
+
+// Now we can construct a sequence of asynch steps that can delay the next step if it needs
+// If no value is returned it passes an undefined value and can be used to signal the next step
+// Let's generalize a delay-Promise creation into a utility we can reuse
+
+// function delay(time) {
+//     return new Promise( function (resolve,reject) {
+//         setTimeout( resolve, time );
+//     } );
+// }
+//
+// delay(100) // step 1
+// .then( function STEP2() {
+//     console.log( "step 2 (after 100ms)");
+//     return delay(200)
+// })
+// .then( function STEP3() {
+//     console.log( "step 3 (after another 200ms)");
+//     return delay(300)
+// } )
+// .then( function STEP4() {
+//     console.log( "step 4 (after another 300" );
+// });
+
+// Instead of timers, lets use ajax requests
+
+// Promise-aware ajax
+// function request(url) {
+//     return new Promise( function (resolve,reject) {
+//         // the ajax(...) callback should be our promise's resolve function
+//         ajax( url, resolve );
+//     });
+// }
+//
+// request( "http://some.url.1/" )
+//  .then( function (response1) {
+//      return request( "httpL//some.url.2/?v=" + response1 );
+//  } )
+//  .then( function (response2) {
+//      console.log( response2 );
+//  } );
+
+// What if something went wrong in one of the steps of the Promise chain?
+
+// // step 1:
+// request( "http://some.url.1/")
+//
+// // step 2:
+//  .then( function (response1) {
+//      foo.bar(); // undefined, error!
+//
+//      // never gets here
+//      request( "http://some.url.2/?v=" + response1 );
+//  } )
+//  .then(
+//      function fulfilled(response2) {
+//          // never gets her
+//      },
+//      function rejected(err) {
+//          console.log( err );
+//          return 42
+//      }
+//  )
+//  .then(function (msg) {
+//      console.log(msg);
+//  } );
+
+// when an error in step 2 happens the handler in step 3 catches it
+// if no rejection handler it will simply rethrow the error until it reaches an explicit rejection handler
+
+/*
+
+ A then(..) call against one Promise automatically produces a new Promise to return from the call.
+
+ Inside the fulfillment/rejection handlers, if you return a value or an exception is thrown,
+ the new returned (chainable) Promise is resolved accordingly.
+
+ If the fulfillment or rejection handler returns a Promise, it is unwrapped, so that whatever its
+ resolution is will become the resolution of the chained Promise returned from the current then(..).
+
+ In the next chapter, we'll see a significantly nicer pattern for sequential flow control expressivity, with
+ generators.
+
+*/
+
+//////////////////////////////////////////////////////////////////
+//           Terminology: Resolve, Fulfill, and Reject          //
+//////////////////////////////////////////////////////////////////
+
+var p = new Promise( function (X,Y) {
+    // X() for fulfillment
+    // Y() for rejection
+} );
+
+// X() is usually used to mark the Promise as fulfilled
+// Usually?
+
+// Y() always marks the Promise as rejected.
+
+// Why shouldn't we call it fulfill(..) instead of resolve(..) to be more accurate?
+var rejectedTh = {
+    then: function (resolved,rejected) {
+        rejected( "Oops" );
+    }
+};
+
+var rejectedPr = Promise.resolve( rejectedTh);
+
+// The first callback parameter of the Promise(..) constructor will either:
+//      unwrap a thenable (identically to Promise.resolve(..))
+//      unwrap a genuine Promise
+
+var rejectedPr = new Promise( function (resolve,reject) {
+    // resolve this promise with a rejected promise
+    resolve( Promise.reject( "Oops" ) );
+} );
+
+rejectedPr.then(
+    function fulfilled() {
+        // never gets here
+    },
+    function rejected(err) {
+        console.log(err);
+    }
+);
+
+//////////////////////////////////////////////////////////////////
+//                        Error Handling                        //
+//////////////////////////////////////////////////////////////////
