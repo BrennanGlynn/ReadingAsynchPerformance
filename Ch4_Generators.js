@@ -284,3 +284,55 @@ and they can even interact
 //////////////////////////////////////////////////////////////////
 //                    Stopping the Generator                    //
 //////////////////////////////////////////////////////////////////
+
+/*
+In the previous example it seems as if the *something() was left in a suspended
+state forever after the break in the loop was called
+
+ If you specify a try..finally clause inside the generator, it will always be run even when
+ the generator is externally completed. This is useful if you need to clean up resources
+ (database connections, etc.):
+
+*/
+
+(function () {
+    function *something() {
+        try {
+            let nextVal;
+
+            while (true) {
+                if (nextVal === undefined) {
+                    nextVal = 1;
+                } else {
+                    nextVal = (nextVal * 3) + 6;
+                }
+
+                yield nextVal
+            }
+        }
+        // cleanup clause
+        finally {
+            console.log( "cleaning up!" );
+        }
+    }
+
+    let it = something();
+    for (let v of it) {
+        console.log( v );
+
+        // don't let the loop run forever!
+        if (v > 500) {
+            console.log(
+                it.return( "This is the last return value" ).value
+            );
+            // no 'break' needed here
+        }
+    }
+})();
+
+// When we call it.return(..) it terminates the generator
+// It also sets the return value to whatever you passed in turn
+
+//////////////////////////////////////////////////////////////////
+//              Iterating Generators Asynchronously             //
+//////////////////////////////////////////////////////////////////
