@@ -385,10 +385,10 @@ Promise.resolve(..) will give us a trustable Promise wrapper to chain off of:
 //           Terminology: Resolve, Fulfill, and Reject          //
 //////////////////////////////////////////////////////////////////
 
-var p = new Promise( function (X,Y) {
-    // X() for fulfillment
-    // Y() for rejection
-} );
+// var p = new Promise( function (X,Y) {
+//     // X() for fulfillment
+//     // Y() for rejection
+// } );
 
 // X() is usually used to mark the Promise as fulfilled
 // Usually?
@@ -396,32 +396,54 @@ var p = new Promise( function (X,Y) {
 // Y() always marks the Promise as rejected.
 
 // Why shouldn't we call it fulfill(..) instead of resolve(..) to be more accurate?
-var rejectedTh = {
-    then: function (resolved,rejected) {
-        rejected( "Oops" );
-    }
-};
-
-var rejectedPr = Promise.resolve( rejectedTh);
+// var rejectedTh = {
+//     then: function (resolved,rejected) {
+//         rejected( "Oops" );
+//     }
+// };
+//
+// var rejectedPr = Promise.resolve( rejectedTh);
 
 // The first callback parameter of the Promise(..) constructor will either:
 //      unwrap a thenable (identically to Promise.resolve(..))
 //      unwrap a genuine Promise
 
-var rejectedPr = new Promise( function (resolve,reject) {
-    // resolve this promise with a rejected promise
-    resolve( Promise.reject( "Oops" ) );
-} );
+// var rejectedPr = new Promise( function (resolve,reject) {
+//     // resolve this promise with a rejected promise
+//     resolve( Promise.reject( "Oops" ) );
+// } );
+//
+// rejectedPr.then(
+//     function fulfilled() {
+//         // never gets here
+//     },
+//     function rejected(err) {
+//         console.log(err);
+//     }
+// );
 
-rejectedPr.then(
-    function fulfilled() {
-        // never gets here
+//////////////////////////////////////////////////////////////////
+//                        Error Handling                        //
+//////////////////////////////////////////////////////////////////
+
+var p = Promise.resolve( 42 );
+p.then(
+    function fulfilled(msg) {
+        // will throw error numbers don't have string functions
+        console.log( msg.toLowerCase() );
     },
     function rejected(err) {
-        console.log(err);
+        // never gets here
+    }
+).then(
+    function fulfilled(msg) {
+        console.log( "success" );
+    },
+    function rejected(err) {
+        console.log( err ); // TypeError: msg.toLowerCase is not a function
     }
 );
 
 //////////////////////////////////////////////////////////////////
-//                        Error Handling                        //
+//                        Pit of Despair                        //
 //////////////////////////////////////////////////////////////////
