@@ -467,43 +467,41 @@ a Promise, and wire that Promise to control the generator's iterator*/
 // Several Promise abstractation libraries provide just such a utility
 // Including the author's asynquence library in Appendix A
 
-(function () {
-    function run(gen) {
-        let args = [].slice.call(arguments, 1), it;
+function run(gen) {
+    let args = [].slice.call(arguments, 1), it;
 
-        // initialize the generator in the current context
-        it = gen.apply(this, args);
+    // initialize the generator in the current context
+    it = gen.apply(this, args);
 
-        // return a promise for the generator completing
-        return Promise.resolve().then(
-            function handleNext(value) {
-                let next = it.next(value);
-                return (function handleResult(next) {
-                    // generator has completed?
-                    if (next.done) {
-                        return next.value;
-                    } else {
-                        return Promise.resolve(next.value).then(
-                            // resume the async loop on success, sending the resolved
-                            // value back into the generator
-                            handleNext,
+    // return a promise for the generator completing
+    return Promise.resolve().then(
+        function handleNext(value) {
+            let next = it.next(value);
+            return (function handleResult(next) {
+                // generator has completed?
+                if (next.done) {
+                    return next.value;
+                } else {
+                    return Promise.resolve(next.value).then(
+                        // resume the async loop on success, sending the resolved
+                        // value back into the generator
+                        handleNext,
 
-                            // if value is a rejected promise, propagate error back into the
-                            // generator for its own error handling
-                            function handleErr(err) {
-                                return Promise.resolve(
-                                    it.throw(err)
-                                ).then(
-                                    handleResult
-                                )
-                            }
-                        )
-                    }
-                })
-            }
-        );
-    }
-})();
+                        // if value is a rejected promise, propagate error back into the
+                        // generator for its own error handling
+                        function handleErr(err) {
+                            return Promise.resolve(
+                                it.throw(err)
+                            ).then(
+                                handleResult
+                            )
+                        }
+                    )
+                }
+            })
+        }
+    );
+}
 
 // a utility/library helper is definitely the way to go
 
@@ -522,4 +520,62 @@ asynchronously until completion.
 
 //////////////////////////////////////////////////////////////////
 //               Promise Concurrency in Generators              //
+//////////////////////////////////////////////////////////////////
+
+// function *foo() {
+//     let r1 = yield request( "http://some.url.1" );
+//     let r2 = yield request( "http://some.url.2" );
+//
+//     let r3 = yield request(
+//         "http://some.url.3/?v=" + r1 + "," + r2
+//     );
+//
+//     console.log( r3 );
+// }
+
+// use previously defined 'run(..) utility
+// run( foo );
+
+// r1 and r2 could be run concurrently, but in this code they run sequentially
+
+// The simplest approach:
+// function *foo() {
+//     // make both requests in parallel
+//     let p1 = request( "http://some.url.1" );
+//     let p2 = request( "http://some.url.2" );
+//
+//     // wait until both promises resolve
+//     let r1 = yield p1;
+//     let r2 = yield p2;
+//
+//     let r3 = yield request(
+//         "http://some.url.3/?v=" + r1 + "," + r2
+//     );
+//
+//     console.log( r3 )
+// }
+
+// run( foo );
+
+// This is basically the same as Promise.all([..]);
+
+// function *foo() {
+//     let results = yield Promise.all([
+//         request( "http://some.url.1" ),
+//         request( "http://some.url.2" )
+//     ]);
+//
+//     let [r1,r2] = results;
+//
+//     let r3 = yield request(
+//         "http://some.url.3/?v=" + r1 + "," + r2
+//     );
+//
+//     console.log( r3 );
+// }
+//
+// run( foo );
+
+//////////////////////////////////////////////////////////////////
+//                       Promises, Hidden                       //
 //////////////////////////////////////////////////////////////////
