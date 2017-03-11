@@ -7,7 +7,8 @@
 //                  Breaking Run-to-Completion                  //
 //////////////////////////////////////////////////////////////////
 (function () {
-    var x = 1;
+    let x = 1,
+        it;
 
     function *foo() {
         x++;
@@ -20,7 +21,7 @@
     }
 
     // construct an iterator 'it' to control the generator
-    var it = foo();
+    it = foo();
 
     // start 'foo()' here!
     it.next(); // x++
@@ -49,16 +50,17 @@
 //////////////////////////////////////////////////////////////////
 
 (function () {
+    let it, res;
 
     function *foo(x,y) {
         return x * y;
     }
 
-    var it = foo( 6, 7 );
+    it = foo( 6, 7 );
 
-    var res = it.next();
+    res = it.next();
 
-    console.log(res);
+    console.log(res); // { value: 42, done: true }
 })();
 
 /*
@@ -68,4 +70,87 @@ is returned from *foo(..)
 
 //////////////////////////////////////////////////////////////////
 //                      Iteration Messaging                     //
+//////////////////////////////////////////////////////////////////
+
+(function () {
+    let it, res;
+
+    function *foo(x) {
+        return x * (yield);
+    }
+
+    it = foo(5);
+
+    // start generator
+    it.next();
+
+    res = it.next(5);
+
+    console.log(res.value); // => 25
+})();
+
+// We can pass a value into a generator using it.next( value )
+// This will assign that value to the most recently called yield
+// Yield can pass out values as well!
+
+(function () {
+    function *foo(x) {
+        return  x * (yield "Hello");
+    }
+
+    let it = foo( 9 );
+
+    // starting generator
+    res = it.next();
+    console.log( res.value ); // => "Hello"
+
+    // pass 7 to waiting yield
+    res = it.next( 7 );
+    console.log(res.value); // => 63
+})();
+
+// generators will finish with undefined value if no return
+
+//////////////////////////////////////////////////////////////////
+//                      Multiple Iterators                      //
+//////////////////////////////////////////////////////////////////
+
+/*
+
+You can have multiple instances of the same generator running at the same time,
+and they can even interact
+
+*/
+
+(function () {
+    let z, it1, it2, val1, val2;
+
+    function *foo() {
+        let x, y;
+
+        x = yield 2;
+        z++;
+        y = yield (x * z);
+        console.log( x, y, z );
+    }
+
+    z = 1;
+
+    it1 = foo();
+    it2 = foo();
+
+    it1.next(); // x: 2
+
+    val2 = it2.next().value; // x: 2
+
+    val1 = it1.next(val2 * 10 ).value; // x: (2 * 10) z: 2  => 40
+    val2 = it2.next(val1 * 5 ).value; // x: (40 * 5), z: 3  => 600
+
+    it1.next( val2 / 2 ); // x: 20, y: 300, z: 3
+    it2.next( val1 / 4 ); // x: 200, y: 10, z: 3
+
+})();
+
+//////////////////////////////////////////////////////////////////
+//                         Interleaving                         //
 //////////////////////////////////////////////////////////////////
