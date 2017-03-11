@@ -426,24 +426,48 @@ Promise.resolve(..) will give us a trustable Promise wrapper to chain off of:
 //                        Error Handling                        //
 //////////////////////////////////////////////////////////////////
 
-var p = Promise.resolve( 42 );
-p.then(
-    function fulfilled(msg) {
-        // will throw error numbers don't have string functions
-        console.log( msg.toLowerCase() );
-    },
-    function rejected(err) {
-        // never gets here
-    }
-).then(
-    function fulfilled(msg) {
-        console.log( "success" );
-    },
-    function rejected(err) {
-        console.log( err ); // TypeError: msg.toLowerCase is not a function
-    }
-);
+// var p = Promise.resolve( 42 );
+// p.then(
+//     function fulfilled(msg) {
+//         // will throw error numbers don't have string functions
+//         console.log( msg.toLowerCase() );
+//     },
+//     function rejected(err) {
+//         // never gets here
+//     }
+// ).then(
+//     function fulfilled(msg) {
+//         console.log( "success" );
+//     },
+//     function rejected(err) {
+//         console.log( err ); // TypeError: msg.toLowerCase is not a function
+//     }
+// );
 
 //////////////////////////////////////////////////////////////////
 //                        Pit of Despair                        //
+//////////////////////////////////////////////////////////////////
+
+// To avoid losing an error to the silence of a forgotten Promise, some
+// developers have claimed that a "best practice" for Promise chains is to
+// always end your chain with a final catch(..)
+
+
+var p = Promise.resolve( 42 );
+
+p.then(
+    function fulfilled(msg) {
+        console.log(msg.toLowerCase());
+    },
+    function rejected(err) {
+        // does not run here
+    }
+).catch( function (err) {
+    console.log( err ); // TypeError: msg.toLowerCase is not a function
+} );
+
+// But if an error is in catch(..), it would be swallowed
+
+//////////////////////////////////////////////////////////////////
+//                       Uncaught Handling                      //
 //////////////////////////////////////////////////////////////////
