@@ -336,3 +336,190 @@ state forever after the break in the loop was called
 //////////////////////////////////////////////////////////////////
 //              Iterating Generators Asynchronously             //
 //////////////////////////////////////////////////////////////////
+
+// I thought we were talking about asynch coding patterns in this book?
+// revisiting from chapter 3 a callback approach
+
+/*
+(function () {
+    function foo(x,y,cb) {
+        ajax(
+            "http://some.url.1/?x=" + x + "&y=" + y,
+            cb
+        );
+    }
+
+    foo( 11, 31, function (err,text) {
+        if (err) {
+            console.error( err );
+        } else {
+            console.log( text );
+        }
+    })
+})();
+*/
+
+// If we wanted to do the same task flow control with a generator
+
+// (function () {
+//     function foo(x,y) {
+//         ajax(
+//             "http://some.url.1/" + x + "&y=" + y,
+//             function (err,data) {
+//                 if (err) {
+//                     // throw an error into *main
+//                     it.throw( err )
+//                 } else {
+//                     it.next( data );
+//                 }
+//             }
+//         )
+//     }
+//
+//     function *main() {
+//         try {
+//             // foo(..) will run if ajax(..) is successful it will set the data to text
+//             let text = yield foo( 11, 31 );
+//             console.log( text );
+//         }
+//         catch (err) {
+//             console.log( err );
+//         }
+//     }
+//
+//     let it = main();
+//
+//     // start it up
+//     it.next();
+// })();
+
+//////////////////////////////////////////////////////////////////
+//                  Synchronous Error Handling                  //
+//////////////////////////////////////////////////////////////////
+
+// Let's turn our attention to the try..catch inside the generator
+// try {
+//     let text = yield foo( 11, 31 );
+//     console.log( text );
+// }
+// catch (err) {
+//     console.log( err );
+// }
+
+/*
+The yield -pause nature of generators means that not only do we get
+synchronous-looking return values from async function calls, but we can
+also synchronously catch errors from those async function calls!
+*/
+
+//////////////////////////////////////////////////////////////////
+//                     Generators + Promises                    //
+//////////////////////////////////////////////////////////////////
+
+// I feel like we spent a lot of time on promises to still be using callbacks
+
+/*The natural way to get the most out of Promises and generators is to yield
+a Promise, and wire that Promise to control the generator's iterator*/
+
+// Put the Promise-aware foo(..) together with the generator *main()
+
+// (function () {
+//     function foo(x,y) {
+//         // will return a promise
+//         return request(
+//             "http://some.url.1/?x=" + x + "&y=" + y
+//         );
+//     }
+//
+//     function *main() {
+//         try {
+//             let text = yield foo(11, 31);
+//             console.log( text );
+//         }
+//         catch (err) {
+//             console.error( err );
+//         }
+//     }
+//
+//     let it = main();
+//
+//     let p = it.next().value;
+//
+//     // wait for the 'p' promise to resolve
+//
+//     p.then(
+//         function (text) {
+//             it.next( text );
+//         },
+//         function (err) {
+//             it.throw( err )
+//         }
+//     );
+// })();
+
+// *main() did not have to change at all!
+
+//////////////////////////////////////////////////////////////////
+//                Promise-Aware Generator Runner                //
+//////////////////////////////////////////////////////////////////
+
+// Let's make a utility designed to run Promise-yielding generators
+// Several Promise abstractation libraries provide just such a utility
+// Including the author's asynquence library in Appendix A
+
+(function () {
+    function run(gen) {
+        let args = [].slice.call(arguments, 1), it;
+
+        // initialize the generator in the current context
+        it = gen.apply(this, args);
+
+        // return a promise for the generator completing
+        return Promise.resolve().then(
+            function handleNext(value) {
+                let next = it.next(value);
+                return (function handleResult(next) {
+                    // generator has completed?
+                    if (next.done) {
+                        return next.value;
+                    } else {
+                        return Promise.resolve(next.value).then(
+                            // resume the async loop on success, sending the resolved
+                            // value back into the generator
+                            handleNext,
+
+                            // if value is a rejected promise, propagate error back into the
+                            // generator for its own error handling
+                            function handleErr(err) {
+                                return Promise.resolve(
+                                    it.throw(err)
+                                ).then(
+                                    handleResult
+                                )
+                            }
+                        )
+                    }
+                })
+            }
+        );
+    }
+})();
+
+// a utility/library helper is definitely the way to go
+
+// How would you use run(..) with *main() in our running Ajax example?
+
+// function *main() {
+//     // ..
+// }
+//
+// run( main );
+/*
+The way we wired run(..) , it will automatically advance the generator you pass to it,
+asynchronously until completion.
+*/
+
+
+//////////////////////////////////////////////////////////////////
+//               Promise Concurrency in Generators              //
+//////////////////////////////////////////////////////////////////
