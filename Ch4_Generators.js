@@ -154,3 +154,97 @@ and they can even interact
 //////////////////////////////////////////////////////////////////
 //                         Interleaving                         //
 //////////////////////////////////////////////////////////////////
+
+(function () {
+    let a = 1,
+        b = 2,
+        s1, s2,
+        n1, n2;
+
+    function *foo() {
+        a++;
+        yield
+        b = b * a;
+        a = (yield b) + 3;
+    }
+
+    function *bar() {
+        b--;
+        yield
+        a = (yield 8) + b;
+        b = a * (yield 2);
+    }
+    /*
+     Depending on what respective order the iterators controlling *foo() and *bar() are called,
+     the preceding program could produce several different results.
+
+     Let's make a helper called step(..) that controls an iterator:
+    */
+    function step(gen) {
+        let it = gen(),
+            last;
+
+        return function () {
+            // whatever is yield'ed out, just send it right back in the next time!
+            last = it.next( last ).value;
+        }
+    }
+
+    s1 = step( foo );
+    s2 = step( bar );
+
+    s1();
+    s1();
+    s1();
+
+    s2();
+    s2();
+    s2();
+    s2();
+
+    console.log( a, b ); // => 11, 22
+
+    a = 1;
+    b = 2;
+
+    n1 = step( foo );
+    n2 = step( bar );
+
+    n2();
+    n2();
+    n1();
+    n2();
+    n1();
+    n1();
+    n2();
+
+    console.log( a, b); // => 12 18
+
+})();
+
+//////////////////////////////////////////////////////////////////
+//                     Generator'ing Values                     //
+//////////////////////////////////////////////////////////////////
+/*                                                              */
+//////////////////////////////////////////////////////////////////
+//                    Producers and Iterators                   //
+//////////////////////////////////////////////////////////////////
+(function () {
+    let gimmeSomething = (function () {
+        let nextVal;
+
+        return function () {
+            if (nextVal !== void 0) {
+                nextVal = (3 * nextVal) + 6;
+            } else {
+                nextVal = 1;
+            }
+            return nextVal;
+        }
+    })();
+
+    console.log( gimmeSomething() );    // 1
+    console.log( gimmeSomething() );    // 9
+    console.log( gimmeSomething() );    // 33
+    console.log( gimmeSomething() );    // 105
+})();
