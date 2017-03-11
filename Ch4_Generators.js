@@ -615,3 +615,55 @@ of the details of asynchrony away from that code as possible.
 //////////////////////////////////////////////////////////////////
 //                     Generator Delegation                     //
 //////////////////////////////////////////////////////////////////
+
+// yield-delegation is a way to integrate one generator into another
+// The special syntax for yield-delegation is yield * __
+
+(function () {
+    function *foo() {
+        console.log("'*foo()' starting");
+        yield 3;
+        yield 4;
+        console.log("'*foo()' finished");
+    }
+
+    function *bar() {
+        yield 1;
+        yield 2;
+        yield *foo(); // 'yield'-delegation
+        yield 5;
+    }
+
+    let it = bar();
+
+    console.log(it.next().value); // 1
+    console.log(it.next().value); // 2
+    console.log(it.next().value); // "'*foo()' starting"
+                                  // 3
+    console.log(it.next().value); // 4
+    console.log(it.next().value); // "'*foo()' finished"
+                                  // 5
+
+})();
+
+// As soon as the it iterator control exhausts the entire *foo()
+// iterator, it automatically returns to controlling *bar()
+
+// function *foo() {
+//     let r2 = yield request("http://some.url.2");
+//     let r3 = yield request("http://some.url.3/?v=" + r2);
+//     return r3;
+// }
+// function *bar() {
+//     let r1 = yield request("http://some.url.1");
+// // "delegating" to `*foo()` via `yield*`
+//     let r3 = yield *foo();
+//     console.log(r3);
+// }
+// run(bar);
+
+// Note: yield * yields iteration control
+
+//////////////////////////////////////////////////////////////////
+//                        Why Delegation?                       //
+//////////////////////////////////////////////////////////////////
