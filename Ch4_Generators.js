@@ -579,3 +579,39 @@ asynchronously until completion.
 //////////////////////////////////////////////////////////////////
 //                       Promises, Hidden                       //
 //////////////////////////////////////////////////////////////////
+
+/*
+As a word of stylistic caution, be careful about how much Promise logic you include
+inside your generators. The whole point of using generators for asynchrony in the way
+we've described is to create simple, sequential, sync-looking code, and to hide as much
+of the details of asynchrony away from that code as possible.
+*/
+
+// // note: normal function, not generator
+// function bar(url1,url2) {
+//     return Promise.all([
+//         request( url1 ),
+//         request( url2 )
+//     ]);
+// }
+//
+// function *foo() {
+//     // hide the Promise-based concurrency details inside bar(..)
+//     let results = yield bar(
+//         "http://some.url.1",
+//         "http://some.url.2"
+//     );
+//
+//     let [r1,r2] = results;
+//     let r3 = yield request(
+//         "http://some.url.3/?v=" + r1 + "," + r2
+//     );
+//
+//     console.log( r3 );
+// }
+//
+// run( foo );
+
+//////////////////////////////////////////////////////////////////
+//                     Generator Delegation                     //
+//////////////////////////////////////////////////////////////////
