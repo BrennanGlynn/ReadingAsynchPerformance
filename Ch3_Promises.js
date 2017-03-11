@@ -469,5 +469,53 @@ p.then(
 // But if an error is in catch(..), it would be swallowed
 
 //////////////////////////////////////////////////////////////////
-//                       Uncaught Handling                      //
+//                       Promise Patterns                       //
 //////////////////////////////////////////////////////////////////
+
+// Promise.all([..])
+
+// If you want to make two Ajax requests at the same time, and wait for both to finish
+
+// 'request(..)' is a Promise-aware Ajax utility,
+var p1 = request("http://some.url.1/");
+var p2 = request("http://some.url.2/");
+
+Promise.all([p1, p2])
+    .then(function (msgs) {
+        return request(
+            "http://some.url.3/?v=" + msgs.join(",")
+        );
+    })
+    .then(function (msg) {
+        console.log(msg)
+    });
+
+// Promise.all([ .. ]) expects a single argument, an array of Promise instances
+// Promise.all([ .. ]) can contain Promises, thenables, or even immediate values
+// If any one of those promises is rejected, the main promise is immediately rejected
+
+// Remember to attach a rejection handler to every promise
+
+
+// Promise.race([ .. ])
+var p1 = request( "http://some.url.1/" );
+var p2 = request( "http://some.url.2/" );
+
+Promise.race([p1, p2])
+    .then(function (msgs) {
+        return request(
+            "http://some.url.3/?v=" + msgs.join(",")
+        );
+    })
+    .then(function (msg) {
+        console.log(msg)
+    });
+
+// Only the first promise to resolve get's passed on to msg
+
+//////////////////////////////////////////////////////////////////
+//                       Promise API Recap                      //
+//////////////////////////////////////////////////////////////////
+
+
+
