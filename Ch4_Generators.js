@@ -248,3 +248,39 @@ and they can even interact
     console.log( gimmeSomething() );    // 33
     console.log( gimmeSomething() );    // 105
 })();
+
+//////////////////////////////////////////////////////////////////
+//                      Generator Iterator                      //
+//////////////////////////////////////////////////////////////////
+
+// When you execute a generator you get an iterator back
+
+(function () {
+    function *something() {
+        let nextVal;
+
+        while (true) {
+            if (nextVal === void 0) {
+                nextVal = 1;
+            } else {
+                nextVal = (3 * nextVal) + 6;
+            }
+
+            yield nextVal;
+        }
+    }
+
+    for (let v of something()) {
+        console.log(v);
+        if (v > 500) {
+            break;
+        }
+    }
+
+    // notice that it is (let v of something()) not (let v of something)
+    // we called something(..) to get it's iterator to loop over
+})();
+
+//////////////////////////////////////////////////////////////////
+//                    Stopping the Generator                    //
+//////////////////////////////////////////////////////////////////
