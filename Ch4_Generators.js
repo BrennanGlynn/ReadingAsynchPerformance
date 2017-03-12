@@ -775,3 +775,49 @@ pass in both directions
 //////////////////////////////////////////////////////////////////
 //                     Generator Concurrency                    //
 //////////////////////////////////////////////////////////////////
+
+// Frankly, our earlier examples of concurrency interleaving of multiple
+// generators showed how to make it really confusing
+
+function response(data) {
+    if (data.url == "http://some.url.1") {
+        res[0] = data;
+    }
+    else if (data.url == "http://some.url.2") {
+        res[1] = data;
+    }
+}
+// But how can we use multiple generators concurrently for this scenario?
+
+// function *reqData(url) {
+//     let data = yield request( url );
+//
+//     // transfer control
+//     yield;
+//
+//     res.push( data );
+// }
+//
+// let it1 = reqData( "http://some.url.1" );
+// let it2 = reqData( "http://some.url.2" );
+//
+// let p1 = it1.next();
+// let p2 = it2.next();
+//
+// p1.then( function (data) {
+//     it1.next( data );
+// } );
+//
+// p2.then( function (data) {
+//     it2.next( data );
+// } );
+//
+// Promise.all( [p1,p2] )
+// .then( function () {
+//     it1.next();
+//     it2.next();
+// } );
+
+//////////////////////////////////////////////////////////////////
+//                            Thunks                            //
+//////////////////////////////////////////////////////////////////
